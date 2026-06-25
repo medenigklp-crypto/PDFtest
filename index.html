@@ -1,61 +1,101 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
-  <meta name="theme-color" content="#0f172a"/>
-  <title>Test Oluşturucu Pro - PDF Düzeltildi</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>📸 Soru Oluşturucu</title>
+  <!-- PDF.js ve Tesseract.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
-    /* ── KISA STİLLER ── */
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Inter', sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
-      padding: 20px;
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: #0b1120;
+      color: #e2e8f0;
+      padding: 16px;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
     }
-    .container { max-width: 900px; margin: 0 auto; }
-    .btn {
-      background: #334155;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 8px;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      transition: 0.2s;
+    .app {
+      max-width: 800px;
+      width: 100%;
     }
-    .btn:hover { background: #475569; }
-    .btn-primary { background: #10b981; }
-    .btn-primary:hover { background: #059669; }
-    .btn-danger { background: #ef4444; }
-    .btn-danger:hover { background: #dc2626; }
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .sub { color: #94a3b8; margin-bottom: 20px; font-size: 14px; }
     .card {
       background: #1e293b;
       border-radius: 16px;
       padding: 20px;
-      margin-top: 16px;
+      margin-bottom: 20px;
       border: 1px solid #334155;
     }
-    .flex { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #334155;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 12px;
+      color: white;
+      font-weight: 600;
+      font-size: 15px;
+      cursor: pointer;
+      transition: 0.2s;
+      flex: 1 1 auto;
+      justify-content: center;
+    }
+    .btn:hover { background: #475569; transform: scale(0.97); }
+    .btn-primary { background: #3b82f6; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-success { background: #10b981; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: #0b1120; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-danger { background: #ef4444; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn:disabled { opacity: 0.5; pointer-events: none; }
+
     .status {
       padding: 10px 14px;
-      border-radius: 8px;
+      border-radius: 10px;
       background: #0f172a;
+      margin: 10px 0;
+      font-size: 14px;
+      border-left: 4px solid #60a5fa;
+    }
+    .status.error { border-left-color: #ef4444; color: #fca5a5; }
+    .status.success { border-left-color: #10b981; color: #6ee7b7; }
+
+    #pdf-canvas-container {
+      background: #f1f5f9;
+      padding: 8px;
+      border-radius: 12px;
+      max-height: 400px;
+      overflow-y: auto;
       margin-top: 10px;
     }
-    .status.error { color: #ef4444; border-left: 4px solid #ef4444; }
-    .status.success { color: #10b981; border-left: 4px solid #10b981; }
-    .status.info { color: #60a5fa; border-left: 4px solid #60a5fa; }
     #pdf-canvas-container canvas {
       width: 100% !important;
       height: auto !important;
-      border: 1px solid #475569;
       border-radius: 8px;
-      margin-bottom: 12px;
       background: white;
+      margin-bottom: 8px;
     }
     .text-layer span {
       color: transparent !important;
@@ -63,248 +103,391 @@
       cursor: text !important;
       pointer-events: auto !important;
     }
+
+    .flex-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 10px 0;
+    }
+    .flex-row .btn { flex: 0 1 auto; }
+
+    #selected-text-box {
+      background: #0f172a;
+      padding: 12px;
+      border-radius: 10px;
+      min-height: 60px;
+      border: 1px solid #334155;
+      color: #cbd5e1;
+      font-size: 14px;
+      word-break: break-word;
+      margin: 8px 0;
+    }
+
     .question-list {
       max-height: 200px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 6px;
+      margin: 8px 0;
     }
-    .question-item {
+    .q-item {
       background: #0f172a;
       padding: 8px 12px;
-      border-radius: 6px;
+      border-radius: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
       border-left: 3px solid #10b981;
     }
+
+    video {
+      width: 100%;
+      border-radius: 12px;
+      background: #000;
+      margin-top: 10px;
+    }
+    .hidden { display: none; }
+
+    .badge {
+      background: #3b82f6;
+      color: white;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 13px;
+      margin-left: 6px;
+    }
   </style>
 </head>
 <body>
+<div class="app">
+  <h1>📸 Soru Oluşturucu</h1>
+  <div class="sub">PDF, Resim veya Kamera ile soru çıkarın</div>
 
-<div class="container">
-  <h1 style="font-size:28px; font-weight:800; margin-bottom:4px;">📄 Test Oluşturucu Pro</h1>
-  <p style="color:#94a3b8; margin-bottom:20px;">PDF'den metin seçerek soru ekleyin</p>
-
+  <!-- KAYNAK SEÇİMİ -->
   <div class="card">
-    <div class="flex">
-      <input type="file" id="pdf-upload" accept=".pdf" style="flex:1; color:white; background:#0f172a; padding:8px; border-radius:6px; border:1px solid #475569;">
-      <button class="btn btn-primary" onclick="loadPDF()">📤 Yükle</button>
-      <button class="btn" onclick="clearAll()">🗑️ Temizle</button>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="activatePDF()">📄 PDF</button>
+      <button class="btn btn-success" onclick="activateGallery()">🖼️ Galeri</button>
+      <button class="btn btn-warning" onclick="activateCamera()">📷 Kamera</button>
     </div>
-    <div id="pdf-status" class="status info">⏳ PDF yüklenmedi.</div>
+    <div id="source-status" class="status">📌 Bir kaynak seçin.</div>
   </div>
 
-  <div class="card" style="display:flex; flex-wrap:wrap; gap:20px;">
-    <div style="flex:2; min-width:280px;">
-      <h3 style="margin-bottom:8px;">📖 PDF Görünümü</h3>
-      <div id="pdf-canvas-container" style="background:#f0f0f0; padding:12px; border-radius:12px; max-height:500px; overflow-y:auto;">
-        <p style="color:#94a3b8; text-align:center; padding:40px 0;">PDF yükleyin</p>
-      </div>
+  <!-- PDF BÖLÜMÜ -->
+  <div id="pdf-section" class="card hidden">
+    <div class="flex-row">
+      <input type="file" id="pdf-input" accept=".pdf" style="flex:1; color:white; background:#0f172a; padding:8px; border-radius:8px; border:1px solid #475569;">
+      <button class="btn btn-primary" onclick="loadPDF()">📤 Yükle</button>
+      <button class="btn btn-danger" onclick="clearPDF()">🗑️</button>
     </div>
-    <div style="flex:1; min-width:200px;">
-      <h3>✏️ Seçilen Metin</h3>
-      <div id="selected-text" style="background:#0f172a; padding:12px; border-radius:8px; min-height:60px; border:1px solid #475569; color:#94a3b8; font-size:14px; word-wrap:break-word;">Metin seçin...</div>
-      <div style="display:flex; gap:8px; margin-top:8px;">
-        <button class="btn btn-primary" style="flex:1;" onclick="addQuestion()">➕ Soru Ekle</button>
-        <button class="btn" style="flex:1;" onclick="pasteText()">📋 Yapıştır</button>
-      </div>
-      <h4 style="margin-top:16px;">📋 Eklenen Sorular (<span id="q-count">0</span>)</h4>
-      <div id="question-list" class="question-list">
-        <div style="color:#94a3b8; font-size:13px;">Henüz soru yok.</div>
-      </div>
-      <button class="btn btn-primary" style="width:100%; margin-top:12px;" onclick="createTest()">📝 Test Oluştur</button>
+    <div id="pdf-status" class="status">⏳ PDF yüklenmedi.</div>
+    <div id="pdf-canvas-container"><p style="color:#94a3b8; text-align:center; padding:20px;">PDF görünecek</p></div>
+  </div>
+
+  <!-- RESİM (Galeri) BÖLÜMÜ -->
+  <div id="image-section" class="card hidden">
+    <div class="flex-row">
+      <input type="file" id="image-input" accept="image/*" style="flex:1; color:white; background:#0f172a; padding:8px; border-radius:8px; border:1px solid #475569;">
+      <button class="btn btn-success" onclick="loadImageOCR()">🔍 OCR Yap</button>
+      <button class="btn btn-danger" onclick="clearImage()">🗑️</button>
     </div>
+    <div id="image-preview" style="max-width:100%; margin:10px 0; border-radius:12px; overflow:hidden; background:#0f172a; display:flex; justify-content:center;">
+      <img id="preview-img" style="max-height:300px; width:auto; display:none;" />
+    </div>
+    <div id="ocr-status" class="status">⏳ Resim yüklenmedi.</div>
+    <div id="ocr-result" style="background:#0f172a; padding:12px; border-radius:10px; border:1px solid #334155; max-height:150px; overflow-y:auto; white-space:pre-wrap; color:#cbd5e1; font-size:14px;"></div>
+  </div>
+
+  <!-- KAMERA BÖLÜMÜ -->
+  <div id="camera-section" class="card hidden">
+    <div class="flex-row">
+      <button class="btn btn-warning" onclick="startCamera()">📷 Kamerayı Başlat</button>
+      <button class="btn btn-success" onclick="capturePhoto()">📸 Fotoğraf Çek</button>
+      <button class="btn btn-danger" onclick="stopCamera()">⏹️ Durdur</button>
+    </div>
+    <video id="video" autoplay playsinline></video>
+    <canvas id="capture-canvas" class="hidden"></canvas>
+    <div id="camera-status" class="status">⏳ Kamera kapalı.</div>
+    <div id="camera-ocr-result" style="background:#0f172a; padding:12px; border-radius:10px; border:1px solid #334155; max-height:150px; overflow-y:auto; white-space:pre-wrap; color:#cbd5e1; font-size:14px;"></div>
+  </div>
+
+  <!-- ORTAK METİN / SORU EKLEME -->
+  <div class="card">
+    <h3>✏️ Seçilen Metin</h3>
+    <div id="selected-text-box">Metin seçin veya OCR ile çıkartın</div>
+    <div class="flex-row">
+      <button class="btn btn-primary" onclick="addQuestion()">➕ Soru Ekle</button>
+      <button class="btn" onclick="pasteManual()">📋 Yapıştır</button>
+    </div>
+    <h4>📋 Eklenen Sorular (<span id="q-count">0</span>)</h4>
+    <div id="question-list" class="question-list"><div style="color:#94a3b8;">Henüz soru yok.</div></div>
+    <button class="btn btn-success" style="width:100%; margin-top:12px;" onclick="createTest()">📝 Test Oluştur</button>
+  </div>
+
+  <!-- KAYITLI TESTLER -->
+  <div class="card">
+    <h3>📚 Kayıtlı Testler</h3>
+    <div id="test-list" style="display:flex; flex-direction:column; gap:6px; margin-top:8px;"></div>
   </div>
 </div>
 
 <script>
-// ── PDF.JS WORKER ──
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-// ── DEĞİŞKENLER ──
+// ── GLOBAL DEĞİŞKENLER ──
 let pdfDoc = null;
 let selectedText = '';
 let questions = [];
+let currentMode = 'pdf'; // pdf, image, camera
 
-// ── PDF YÜKLE ──
-async function loadPDF() {
-  const fileInput = document.getElementById('pdf-upload');
-  const status = document.getElementById('pdf-status');
-  const file = fileInput.files[0];
-  if (!file) {
-    status.className = 'status error';
-    status.textContent = '❌ Lütfen bir PDF dosyası seçin.';
-    return;
-  }
+// PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-  status.className = 'status info';
-  status.textContent = '⏳ PDF okunuyor...';
-
-  try {
-    const arrayBuffer = await file.arrayBuffer();
-    const typedarray = new Uint8Array(arrayBuffer);
-
-    // PDF belgesini yükle
-    const loadingTask = pdfjsLib.getDocument({ data: typedarray });
-    pdfDoc = await loadingTask.promise;
-
-    if (!pdfDoc || !pdfDoc.numPages) {
-      throw new Error('PDF geçersiz veya sayfa sayısı alınamadı.');
-    }
-
-    status.className = 'status success';
-    status.textContent = `✅ PDF yüklendi (${pdfDoc.numPages} sayfa)`;
-
-    await renderPages();
-    status.textContent += ' ✅ Metin seçilebilir.';
-
-  } catch (err) {
-    console.error('PDF yükleme hatası:', err);
-    status.className = 'status error';
-    status.textContent = `❌ Hata: ${err.message}`;
-    pdfDoc = null;
-  }
+// ── MODÜL GEÇİŞLERİ ──
+function activatePDF() {
+  hideAllSections();
+  document.getElementById('pdf-section').classList.remove('hidden');
+  document.getElementById('source-status').textContent = '📄 PDF modu aktif.';
+  currentMode = 'pdf';
+}
+function activateGallery() {
+  hideAllSections();
+  document.getElementById('image-section').classList.remove('hidden');
+  document.getElementById('source-status').textContent = '🖼️ Galeri modu aktif.';
+  currentMode = 'image';
+}
+function activateCamera() {
+  hideAllSections();
+  document.getElementById('camera-section').classList.remove('hidden');
+  document.getElementById('source-status').textContent = '📷 Kamera modu aktif.';
+  currentMode = 'camera';
+}
+function hideAllSections() {
+  ['pdf-section','image-section','camera-section'].forEach(id => {
+    document.getElementById(id).classList.add('hidden');
+  });
 }
 
-// ── SAYFALARI RENDER ET ──
-async function renderPages() {
+// ── PDF ──
+async function loadPDF() {
+  const input = document.getElementById('pdf-input');
+  const status = document.getElementById('pdf-status');
+  const file = input.files[0];
+  if (!file) { status.className = 'status error'; status.textContent = '❌ Dosya seçin.'; return; }
+  status.className = 'status'; status.textContent = '⏳ Okunuyor...';
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const data = new Uint8Array(arrayBuffer);
+    const loadingTask = pdfjsLib.getDocument({ data });
+    pdfDoc = await loadingTask.promise;
+    if (!pdfDoc || !pdfDoc.numPages) throw new Error('PDF geçersiz.');
+    status.className = 'status success';
+    status.textContent = `✅ ${pdfDoc.numPages} sayfa yüklendi.`;
+    await renderPDFPages();
+    status.textContent += ' ✅ Metin seçilebilir.';
+  } catch (e) {
+    status.className = 'status error';
+    status.textContent = `❌ Hata: ${e.message}`;
+    console.error(e);
+  }
+}
+async function renderPDFPages() {
   const container = document.getElementById('pdf-canvas-container');
   container.innerHTML = '';
   if (!pdfDoc) return;
-
   for (let i = 1; i <= pdfDoc.numPages; i++) {
-    try {
-      const page = await pdfDoc.getPage(i);
-      const viewport = page.getViewport({ scale: 1.2 });
+    const page = await pdfDoc.getPage(i);
+    const viewport = page.getViewport({ scale: 1.2 });
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    canvas.style.width = '100%';
+    canvas.style.height = 'auto';
+    canvas.style.background = 'white';
+    container.appendChild(canvas);
+    await page.render({ canvasContext: ctx, viewport }).promise;
 
-      // Canvas
-      const canvas = document.createElement('canvas');
-      const context = canvas.getContext('2d');
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      canvas.style.width = '100%';
-      canvas.style.height = 'auto';
-      canvas.style.border = '1px solid #475569';
-      canvas.style.borderRadius = '8px';
-      canvas.style.marginBottom = '12px';
-      canvas.style.background = 'white';
-      container.appendChild(canvas);
-
-      await page.render({ canvasContext: context, viewport }).promise;
-
-      // Metin katmanı
-      const textContent = await page.getTextContent();
-      if (textContent.items.length === 0) {
-        const warn = document.createElement('div');
-        warn.textContent = `⚠️ ${i}. sayfada metin yok (taranmış olabilir)`;
-        warn.style.cssText = 'color:#f59e0b; font-size:12px; margin-top:-8px; margin-bottom:12px;';
-        container.appendChild(warn);
-        continue;
-      }
-
-      const textLayer = document.createElement('div');
-      textLayer.style.position = 'relative';
-      textLayer.style.width = '100%';
-      textLayer.style.height = '0';
-      textLayer.style.overflow = 'visible';
-      textLayer.style.marginTop = '-' + canvas.height + 'px';
-      textLayer.style.pointerEvents = 'none';
-
-      const scale = 1.2;
-      textContent.items.forEach(item => {
-        const span = document.createElement('span');
-        span.textContent = item.str;
-        span.style.position = 'absolute';
-        span.style.left = (item.transform[4] * scale) + 'px';
-        span.style.top = (item.transform[5] * scale) + 'px';
-        span.style.fontSize = (item.height * scale) + 'px';
-        span.style.fontFamily = 'sans-serif';
-        span.style.color = 'transparent';
-        span.style.userSelect = 'text';
-        span.style.cursor = 'text';
-        span.style.pointerEvents = 'auto';
-        span.style.display = 'inline-block';
-        span.style.whiteSpace = 'pre';
-        textLayer.appendChild(span);
-      });
-
-      container.appendChild(textLayer);
-
-      // Seçim yakalama
-      textLayer.addEventListener('mouseup', handleSelection);
-      textLayer.addEventListener('touchend', () => setTimeout(handleSelection, 300));
-    } catch (err) {
-      console.error('Sayfa render hatası:', err);
-      const errDiv = document.createElement('div');
-      errDiv.textContent = `❌ ${i}. sayfa gösterilemedi: ${err.message}`;
-      errDiv.style.cssText = 'color:#ef4444; padding:8px; background:#0f172a; border-radius:4px; margin-bottom:8px;';
-      container.appendChild(errDiv);
-    }
+    // metin katmanı
+    const textContent = await page.getTextContent();
+    if (textContent.items.length === 0) continue;
+    const textLayer = document.createElement('div');
+    textLayer.style.position = 'relative';
+    textLayer.style.width = '100%';
+    textLayer.style.height = '0';
+    textLayer.style.overflow = 'visible';
+    textLayer.style.marginTop = '-' + canvas.height + 'px';
+    textLayer.style.pointerEvents = 'none';
+    const scale = 1.2;
+    textContent.items.forEach(item => {
+      const span = document.createElement('span');
+      span.textContent = item.str;
+      span.style.position = 'absolute';
+      span.style.left = (item.transform[4] * scale) + 'px';
+      span.style.top = (item.transform[5] * scale) + 'px';
+      span.style.fontSize = (item.height * scale) + 'px';
+      span.style.fontFamily = 'sans-serif';
+      span.style.color = 'transparent';
+      span.style.userSelect = 'text';
+      span.style.cursor = 'text';
+      span.style.pointerEvents = 'auto';
+      span.style.display = 'inline-block';
+      span.style.whiteSpace = 'pre';
+      textLayer.appendChild(span);
+    });
+    container.appendChild(textLayer);
+    // seçim yakalama
+    textLayer.addEventListener('mouseup', handleSelection);
+    textLayer.addEventListener('touchend', () => setTimeout(handleSelection, 400));
   }
 }
-
-// ── SEÇİM YAKALAMA ──
 function handleSelection() {
   const sel = window.getSelection().toString().trim();
   if (sel) {
     selectedText = sel;
-    document.getElementById('selected-text').textContent = sel;
-    document.getElementById('selected-text').style.color = '#f8fafc';
+    document.getElementById('selected-text-box').textContent = sel;
+    document.getElementById('selected-text-box').style.color = '#e2e8f0';
+  }
+}
+function clearPDF() {
+  document.getElementById('pdf-input').value = '';
+  document.getElementById('pdf-canvas-container').innerHTML = '<p style="color:#94a3b8; text-align:center; padding:20px;">PDF görünecek</p>';
+  document.getElementById('pdf-status').className = 'status';
+  document.getElementById('pdf-status').textContent = '⏳ PDF yüklenmedi.';
+  pdfDoc = null;
+}
+
+// ── RESİM OCR (Tesseract) ──
+async function loadImageOCR() {
+  const input = document.getElementById('image-input');
+  const status = document.getElementById('ocr-status');
+  const preview = document.getElementById('preview-img');
+  const resultBox = document.getElementById('ocr-result');
+  const file = input.files[0];
+  if (!file) { status.className = 'status error'; status.textContent = '❌ Resim seçin.'; return; }
+  const url = URL.createObjectURL(file);
+  preview.src = url;
+  preview.style.display = 'block';
+  status.className = 'status'; status.textContent = '⏳ OCR yapılıyor...';
+  try {
+    const { data: { text } } = await Tesseract.recognize(url, 'tur', { logger: m => console.log(m) });
+    const clean = text.trim();
+    resultBox.textContent = clean || 'Metin bulunamadı.';
+    if (clean) {
+      selectedText = clean;
+      document.getElementById('selected-text-box').textContent = clean;
+      document.getElementById('selected-text-box').style.color = '#e2e8f0';
+    }
+    status.className = 'status success';
+    status.textContent = '✅ OCR tamamlandı.';
+  } catch (e) {
+    status.className = 'status error';
+    status.textContent = `❌ OCR hatası: ${e.message}`;
+    console.error(e);
+  }
+}
+function clearImage() {
+  document.getElementById('image-input').value = '';
+  document.getElementById('preview-img').style.display = 'none';
+  document.getElementById('preview-img').src = '';
+  document.getElementById('ocr-result').textContent = '';
+  document.getElementById('ocr-status').className = 'status';
+  document.getElementById('ocr-status').textContent = '⏳ Resim yüklenmedi.';
+}
+
+// ── KAMERA ──
+let stream = null;
+async function startCamera() {
+  const video = document.getElementById('video');
+  const status = document.getElementById('camera-status');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    video.srcObject = stream;
+    await video.play();
+    status.className = 'status success';
+    status.textContent = '📷 Kamera aktif.';
+  } catch (e) {
+    status.className = 'status error';
+    status.textContent = `❌ Kamera erişilemedi: ${e.message}`;
+  }
+}
+function stopCamera() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+    stream = null;
+  }
+  document.getElementById('video').srcObject = null;
+  document.getElementById('camera-status').className = 'status';
+  document.getElementById('camera-status').textContent = '⏳ Kamera kapalı.';
+}
+async function capturePhoto() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('capture-canvas');
+  const status = document.getElementById('camera-status');
+  if (!video.srcObject) { alert('Kamerayı başlatın.'); return; }
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg');
+  status.className = 'status'; status.textContent = '⏳ OCR yapılıyor...';
+  try {
+    const { data: { text } } = await Tesseract.recognize(dataUrl, 'tur', { logger: m => console.log(m) });
+    const clean = text.trim();
+    document.getElementById('camera-ocr-result').textContent = clean || 'Metin bulunamadı.';
+    if (clean) {
+      selectedText = clean;
+      document.getElementById('selected-text-box').textContent = clean;
+      document.getElementById('selected-text-box').style.color = '#e2e8f0';
+    }
+    status.className = 'status success';
+    status.textContent = '✅ OCR tamamlandı.';
+  } catch (e) {
+    status.className = 'status error';
+    status.textContent = `❌ OCR hatası: ${e.message}`;
+    console.error(e);
   }
 }
 
-// ── SORU EKLE ──
+// ── ORTAK METİN İŞLEMLERİ ──
 function addQuestion() {
-  if (!selectedText) {
-    alert('Lütfen önce bir metin seçin veya yapıştırın.');
+  const text = document.getElementById('selected-text-box').textContent;
+  if (!text || text === 'Metin seçin veya OCR ile çıkartın' || text === 'Metin seçin...') {
+    alert('Lütfen önce bir metin seçin veya OCR yapın.');
     return;
   }
-  questions.push(selectedText);
+  questions.push(text);
   updateQuestionList();
+  // temizle
+  document.getElementById('selected-text-box').textContent = 'Metin seçin veya OCR ile çıkartın';
+  document.getElementById('selected-text-box').style.color = '#94a3b8';
   selectedText = '';
-  document.getElementById('selected-text').textContent = 'Metin seçin...';
-  document.getElementById('selected-text').style.color = '#94a3b8';
   window.getSelection().removeAllRanges();
 }
-
-// ── YAPIŞTIR ──
-async function pasteText() {
-  try {
-    const text = await navigator.clipboard.readText();
-    if (text) {
-      selectedText = text;
-      document.getElementById('selected-text').textContent = text;
-      document.getElementById('selected-text').style.color = '#f8fafc';
-    }
-  } catch {
-    const manual = prompt('Metni buraya yapıştırın:');
-    if (manual) {
-      selectedText = manual;
-      document.getElementById('selected-text').textContent = manual;
-      document.getElementById('selected-text').style.color = '#f8fafc';
-    }
+function pasteManual() {
+  const text = prompt('Metni yapıştırın:');
+  if (text && text.trim()) {
+    document.getElementById('selected-text-box').textContent = text.trim();
+    document.getElementById('selected-text-box').style.color = '#e2e8f0';
+    selectedText = text.trim();
   }
 }
-
-// ── SORU LİSTESİNİ GÜNCELLE ──
 function updateQuestionList() {
   const container = document.getElementById('question-list');
   const count = document.getElementById('q-count');
   count.textContent = questions.length;
   if (questions.length === 0) {
-    container.innerHTML = '<div style="color:#94a3b8; font-size:13px;">Henüz soru yok.</div>';
+    container.innerHTML = '<div style="color:#94a3b8;">Henüz soru yok.</div>';
     return;
   }
   container.innerHTML = questions.map((q, i) => `
-    <div class="question-item">
-      <span style="font-size:13px; word-break:break-word;">${q.substring(0, 80)}${q.length > 80 ? '...' : ''}</span>
+    <div class="q-item">
+      <span style="font-size:13px; word-break:break-word;">${q.substring(0, 80)}${q.length > 80 ? '…' : ''}</span>
       <button onclick="removeQuestion(${i})" style="background:none; border:none; color:#ef4444; cursor:pointer; font-size:16px;">✕</button>
     </div>
   `).join('');
 }
-
 function removeQuestion(index) {
   questions.splice(index, 1);
   updateQuestionList();
@@ -312,45 +495,58 @@ function removeQuestion(index) {
 
 // ── TEST OLUŞTUR ──
 function createTest() {
-  if (questions.length === 0) {
-    alert('Hiç soru eklenmemiş.');
-    return;
-  }
-  const title = prompt('Test başlığı:', 'PDF\'den Alınan Test');
+  if (questions.length === 0) { alert('Hiç soru eklenmemiş.'); return; }
+  const title = prompt('Test başlığı:', 'Yeni Test');
   if (!title) return;
   const cls = prompt('Sınıf:', '');
-  // Testi localStorage'a kaydet (basitçe)
   const test = {
-    id: 't' + Date.now() + Math.random().toString(36).substring(2,6),
-    title: title,
+    id: Date.now().toString(36) + Math.random().toString(36).substring(2,5),
+    title,
     class: cls || 'Sınıf yok',
-    questions: questions.length,
-    status: 'ready',
+    questionCount: questions.length,
     date: new Date().toLocaleDateString('tr-TR'),
-    questionsList: [...questions]
+    questions: [...questions]
   };
-  let tests = JSON.parse(localStorage.getItem('testAppData')) || [];
+  let tests = JSON.parse(localStorage.getItem('testAppData') || '[]');
   tests.unshift(test);
   localStorage.setItem('testAppData', JSON.stringify(tests));
-  alert(`✅ "${title}" testi ${questions.length} soru ile oluşturuldu!`);
+  alert(`✅ "${title}" testi ${questions.length} soru ile kaydedildi.`);
   questions = [];
   updateQuestionList();
+  renderTests();
 }
 
-// ── TEMİZLE ──
-function clearAll() {
-  document.getElementById('pdf-upload').value = '';
-  document.getElementById('pdf-canvas-container').innerHTML = '<p style="color:#94a3b8; text-align:center; padding:40px 0;">PDF yükleyin</p>';
-  document.getElementById('pdf-status').className = 'status info';
-  document.getElementById('pdf-status').textContent = '⏳ PDF yüklenmedi.';
-  pdfDoc = null;
-  selectedText = '';
-  questions = [];
-  updateQuestionList();
-  document.getElementById('selected-text').textContent = 'Metin seçin...';
-  document.getElementById('selected-text').style.color = '#94a3b8';
+// ── KAYITLI TESTLERİ GÖSTER ──
+function renderTests() {
+  const container = document.getElementById('test-list');
+  const tests = JSON.parse(localStorage.getItem('testAppData') || '[]');
+  if (tests.length === 0) {
+    container.innerHTML = '<div style="color:#94a3b8; font-size:14px;">Hiç test yok.</div>';
+    return;
+  }
+  container.innerHTML = tests.map((t, idx) => `
+    <div style="background:#0f172a; padding:10px 14px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; border-left:3px solid #3b82f6;">
+      <div>
+        <strong>${t.title}</strong>
+        <span style="font-size:12px; color:#94a3b8; margin-left:8px;">${t.class} • ${t.questionCount} soru • ${t.date}</span>
+      </div>
+      <button onclick="deleteTest(${idx})" style="background:none; border:none; color:#ef4444; cursor:pointer;">🗑️</button>
+    </div>
+  `).join('');
 }
+function deleteTest(index) {
+  if (!confirm('Bu testi sil?')) return;
+  let tests = JSON.parse(localStorage.getItem('testAppData') || '[]');
+  tests.splice(index, 1);
+  localStorage.setItem('testAppData', JSON.stringify(tests));
+  renderTests();
+}
+
+// ── BAŞLANGIÇ ──
+document.addEventListener('DOMContentLoaded', () => {
+  renderTests();
+  activatePDF(); // varsayılan
+});
 </script>
-
 </body>
 </html>
