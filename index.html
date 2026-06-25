@@ -11,6 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
+    /* ── TÜM STİLLER (aynı) ── */
     :root {
       --bg-primary: #0f172a;
       --bg-secondary: #1e293b;
@@ -755,6 +756,9 @@ const defaultTests = [
   { id: 't4', title: 'Çözeltiler - TEST 2', class: '9-A', questions: 10, status: 'ready', date: '18 Haziran' }
 ];
 
+// ── PDF.JS WORKER AYARI (ÇOK ÖNEMLİ) ──
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
 // ── VERİ YÜKLEME / KAYDETME ──
 function loadData() {
   const stored = localStorage.getItem('testAppData');
@@ -1031,9 +1035,6 @@ function initCharts() {
 function updateCharts() { /* grafikler init ile oluşturuluyor */ }
 
 // ── PDF GÖRÜNTÜLEYİCİ (DÜZELTİLMİŞ) ──
-// PDF.js worker ayarı
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
 function openPDFViewer() {
   document.getElementById('pdf-viewer-modal').classList.add('open');
   extractedQuestions = [];
@@ -1060,7 +1061,8 @@ async function loadPDF() {
   reader.onload = async function(e) {
     try {
       const typedarray = new Uint8Array(e.target.result);
-      pdfDoc = await pdfjsLib.getDocument(typedarray).promise;
+      // ✅ DOĞRU KULLANIM: { data: typedarray }
+      pdfDoc = await pdfjsLib.getDocument({ data: typedarray }).promise;
       statusEl.textContent = `✅ PDF yüklendi (${pdfDoc.numPages} sayfa)`;
       await renderPDFPages();
       showToast('PDF başarıyla yüklendi, metin seçebilirsiniz.', 'success');
@@ -1080,7 +1082,10 @@ async function loadPDF() {
 async function renderPDFPages() {
   const container = document.getElementById('pdf-canvas-container');
   container.innerHTML = '';
-  if (!pdfDoc) return;
+  if (!pdfDoc) {
+    container.innerHTML = '<div style="text-align:center; color:var(--danger); padding:20px;">PDF belgesi yüklenmemiş.</div>';
+    return;
+  }
 
   for (let i = 1; i <= pdfDoc.numPages; i++) {
     try {
@@ -1140,6 +1145,7 @@ async function renderPDFPages() {
       
       container.appendChild(textLayerDiv);
 
+      // Mouse ve touch ile metin seçimi
       textLayerDiv.addEventListener('mouseup', handleTextSelection);
       textLayerDiv.addEventListener('touchend', function(e) {
         setTimeout(handleTextSelection, 300);
